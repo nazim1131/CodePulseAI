@@ -8,16 +8,11 @@ router.get('/subscription', protect, async (req, res) => {
   try {
     const user = req.user;
     
-    // Calculate derived fields
-    const scanLimit = user.scansTotal || 50;
-    const scansRemaining = user.scansRemaining || Number(user.scansRemaining) === 0 ? user.scansRemaining : 50;
-    const scansUsed = scanLimit - scansRemaining;
-    
     res.json({
       plan: user.plan || 'free',
-      scanLimit: scanLimit,
-      scansUsed: scansUsed,
-      subscriptionStatus: user.stripeSubscriptionId ? 'active' : 'active'
+      scanLimit: user.scanLimit || 50,
+      scansUsed: user.scansUsed || 0,
+      subscriptionStatus: user.subscriptionId ? 'active' : 'active'
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);

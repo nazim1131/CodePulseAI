@@ -57,13 +57,13 @@ router.post('/', protect, scanLimit, async (req, res) => {
     const fullName = `${owner}/${repo}`;
 
     // Debug logs
-    console.log(`[Scan] User: ${req.user.username} | Plan: ${req.user.plan} | scansRemaining: ${req.user.scansRemaining}`);
+    console.log(`[Scan] User: ${req.user.username} | Plan: ${req.user.plan} | scansUsed: ${req.user.scansUsed}/${req.user.scanLimit}`);
 
-    const userLimit = planLimits[req.user.plan] || planLimits.free;
+    const userLimit = req.user.scanLimit || planLimits[req.user.plan] || planLimits.free;
 
     // Enforce plan limits in production only
     if (process.env.NODE_ENV === 'production') {
-      if (req.user.scansRemaining <= 0) {
+      if (req.user.scansUsed >= userLimit) {
         return res.status(403).json({ 
           message: `You have reached your ${userLimit} scans/month limit for the ${req.user.plan} plan.`, 
           upgradeRequired: req.user.plan === 'free',
@@ -72,10 +72,10 @@ router.post('/', protect, scanLimit, async (req, res) => {
       }
     } else {
       // In development: top up depleted users so scans always work
-      if (req.user.scansRemaining <= 0) {
-        console.log(`[Scan] Dev mode — topping up scansRemaining for ${req.user.username}`);
-        await req.user.constructor.findByIdAndUpdate(req.user._id, { scansRemaining: 999 });
-        req.user.scansRemaining = 999;
+      if (req.user.scansUsed >= userLimit) {
+        console.log(`[Scan] Dev mode — resetting scansUsed for ${req.user.username}`);
+        await req.user.constructor.findByIdAndUpdate(req.user._id, { scansUsed: 0 });
+        req.user.scansUsed = 0;
       }
     }
 
@@ -91,9 +91,9 @@ router.post('/', protect, scanLimit, async (req, res) => {
       { upsert: true, returnDocument: 'after' }
     );
 
-    // Decrement scan count
-    await req.user.constructor.findByIdAndUpdate(req.user._id, { $inc: { scansRemaining: -1 } });
-    req.user.scansRemaining -= 1;
+    // Increment scan count
+    await req.user.constructor.findByIdAndUpdate(req.user._id, { $inc: { scansUsed: 1 } });
+    req.user.scansUsed += 1;
 
     // Create scan record immediately
     const scan = await Scan.create({

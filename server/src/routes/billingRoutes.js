@@ -44,6 +44,9 @@ router.post('/checkout', protect, async (req, res) => {
       cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing?payment=cancelled`,
       client_reference_id: req.user._id.toString(),
       customer_email: req.user.email || undefined,
+      metadata: {
+        userId: req.user._id.toString()
+      }
     });
 
     console.log('[Billing] Session created:', session.id);
@@ -88,16 +91,17 @@ webhookRouter.post('/', async (req, res) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        const userId = session.client_reference_id;
+        const userId = session.metadata?.userId || session.client_reference_id;
         if (userId) {
-          await User.findByIdAndUpdate(userId, {
-            stripeCustomerId: session.customer,
-            stripeSubscriptionId: session.subscription,
-            plan: 'pro',
-            scansRemaining: 250,
-            scansTotal: 250
-          });
-          console.log(`[Billing] User ${userId} upgraded to PRO`);
+          const user = await User.findById(userId);
+          if (user) {
+            user.plan = 'pro';
+            user.scanLimit = 250;
+            user.subscriptionId = session.subscription;
+            user.stripeCustomerId = session.customer;
+            await user.save();
+            console.log(`[Billing] User ${userId} upgraded to PRO`);
+          }
         }
         break;
       }
@@ -105,8 +109,8 @@ webhookRouter.post('/', async (req, res) => {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
         await User.updateMany(
-          { stripeSubscriptionId: subscription.id },
-          { plan: 'free', scansRemaining: 50, scansTotal: 50 }
+          { subscriptionId: subscription.id },
+          { plan: 'free', scanLimit: 50 }
         );
         console.log(`[Billing] Subscription ${subscription.id} deleted — users reset to FREE`);
         break;

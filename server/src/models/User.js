@@ -7,10 +7,10 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String },
   accessToken: { type: String, required: true },
   plan: { type: String, default: 'free', enum: ['free', 'pro', 'team'] },
-  scansRemaining: { type: Number, default: 50 },
-  scansTotal: { type: Number, default: 50 },
+  scansUsed: { type: Number, default: 0 },
+  scanLimit: { type: Number, default: 50 },
   stripeCustomerId: { type: String },
-  stripeSubscriptionId: { type: String }
+  subscriptionId: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
