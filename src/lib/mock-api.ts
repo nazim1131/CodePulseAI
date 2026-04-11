@@ -166,6 +166,16 @@ export const api = {
     }
   },
 
+  getSubscription: async (): Promise<any> => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/subscription`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
+
   createCheckoutSession: async (plan: string = 'pro'): Promise<{ url: string }> => {
     const res = await fetch(`${API_BASE_URL}/billing/checkout`, {
       method: 'POST',

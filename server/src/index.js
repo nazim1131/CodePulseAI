@@ -49,8 +49,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+const userRoutes = require('./routes/userRoutes');
+
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/repos', repoRoutes);
 app.use('/api/scan', scanRoutes);
 app.use('/api/reviews', reviewRoutes);
