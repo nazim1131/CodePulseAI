@@ -14,33 +14,40 @@ import PricingPage from "./pages/PricingPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
 import { PageTransition } from "./components/layout/PageTransition";
+
+import { AuthProvider } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <PageTransition>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/repo/:id" element={<RepoDetailPage />} />
-          <Route path="/review/:repoId" element={<CodeReviewPage />} />
-          <Route path="/history/:repoId" element={<ScanHistoryPage />} />
-          <Route path="/report/:repoId" element={<ReportPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        </PageTransition>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <PageTransition>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/repo/:id" element={<RepoDetailPage />} />
+            <Route path="/review/:owner/:repo" element={<CodeReviewPage />} />
+            <Route path="/review/:repoId" element={<CodeReviewPage />} />
+            <Route path="/history/:repoId" element={<ScanHistoryPage />} />
+            <Route path="/report/:repoId" element={<ReportPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          </PageTransition>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

@@ -1,11 +1,17 @@
 import { PageLayout } from "@/components/layout/PageLayout";
-import { mockUser } from "@/lib/mock-api";
+import { useAuth } from "@/context/AuthContext";
+import { Navigate } from "react-router-dom";
 import { ScoreRing } from "@/components/shared/ScoreRing";
 import { User, Crown, BarChart3 } from "lucide-react";
 
 export default function ProfilePage() {
-  const u = mockUser;
-  const usagePercent = Math.round((u.scansRemaining / u.scansTotal) * 100);
+  const { user, loading: authLoading } = useAuth();
+
+  if (authLoading) return <PageLayout showFooter={false}><div className="flex justify-center p-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></PageLayout>;
+  if (!user) return <Navigate to="/login" />;
+
+  const u = user;
+  const usagePercent = Math.round((u.scansRemaining / u.scansTotal) * 100) || 0;
 
   return (
     <PageLayout showFooter={false}>

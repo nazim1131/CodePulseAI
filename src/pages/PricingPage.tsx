@@ -1,13 +1,16 @@
+import { useState } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { Link } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Check, Loader2 } from "lucide-react";
+import { api } from "@/lib/mock-api";
+import { toast } from "sonner";
 
 const plans = [
   {
     name: "Free",
     price: "$0",
     desc: "For individual developers",
-    features: ["5 scans/month", "1 repository", "Basic bug detection", "Community support"],
+    features: ["50 scans/month", "1 repository", "Basic bug detection", "Community support"],
     cta: "Get Started",
     popular: false,
   },
@@ -30,6 +33,35 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handlePlanClick = async (planName: string) => {
+    const isAuthenticated = !!localStorage.getItem("token");
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (planName === "Free") {
+      navigate('/dashboard');
+    } else if (planName === "Pro" || planName === "Team") {
+      setLoading(planName);
+      try {
+        const result = await api.createCheckoutSession(planName.toLowerCase());
+        window.location.href = result.url;
+      } catch (err: any) {
+        if (err?.missingConfig) {
+          toast.error("Stripe is not yet configured. Please add STRIPE_PRO_PRICE_ID to server/.env");
+        } else {
+          toast.error(err?.message || "Checkout failed. Please try again.");
+        }
+        setLoading(null);
+      }
+    }
+  };
+
   return (
     <PageLayout>
       <section className="py-20">
@@ -52,12 +84,23 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link
-                  to="/login"
-                  className={`block text-center rounded-xl py-2.5 text-sm font-semibold transition-colors ${p.popular ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border border-border text-foreground hover:bg-secondary"}`}
-                >
-                  {p.cta}
-                </Link>
+                
+                {p.popular ? (
+                  <button
+                    onClick={() => handlePlanClick(p.name)}
+                    disabled={loading === p.name}
+                    className="flex justify-center items-center w-full rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {loading === p.name ? <Loader2 className="h-4 w-4 animate-spin" /> : p.cta}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handlePlanClick(p.name)}
+                    className="block text-center w-full rounded-xl border border-border bg-card py-2.5 text-sm font-semibold text-foreground hover:bg-secondary transition-colors"
+                  >
+                    {p.cta}
+                  </button>
+                )}
               </div>
             ))}
           </div>

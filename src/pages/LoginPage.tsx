@@ -1,7 +1,15 @@
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Github } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 export default function LoginPage() {
+  const { user } = useAuth();
+  
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <PageLayout showFooter={false}>
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
@@ -14,7 +22,10 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground mt-1">Sign in to continue to CodeReview AI</p>
           </div>
 
-          <button className="w-full flex items-center justify-center gap-3 rounded-xl bg-foreground text-background px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity mb-4">
+          <button 
+            onClick={() => { window.location.href = "http://localhost:5000/api/auth/github"; }}
+            className="w-full flex items-center justify-center gap-3 rounded-xl bg-foreground text-background px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity mb-4"
+          >
             <Github className="h-5 w-5" />
             Continue with GitHub
           </button>

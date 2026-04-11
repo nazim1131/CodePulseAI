@@ -1,7 +1,8 @@
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Link } from "react-router-dom";
-import { Github, Zap, Shield, BarChart3, ArrowRight, Code2, Star } from "lucide-react";
+import { Github, Zap, Shield, BarChart3, ArrowRight, Code2, Star, LayoutDashboard } from "lucide-react";
 import { RevealOnScroll } from "@/hooks/useScrollReveal";
+import { useAuth } from "@/context/AuthContext";
 
 const features = [
   { icon: Shield, title: "AI Bug Detection", desc: "Automatically detect bugs, security vulnerabilities, and anti-patterns in your codebase." },
@@ -23,6 +24,9 @@ const stats = [
 ];
 
 export default function LandingPage() {
+  const { user } = useAuth();
+  const authLink = user ? "/dashboard" : "/login";
+  
   return (
     <PageLayout>
       {/* Hero */}
@@ -49,8 +53,8 @@ export default function LandingPage() {
             </RevealOnScroll>
             <RevealOnScroll delay={300}>
               <div className="flex flex-wrap gap-3">
-                <Link to="/login" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
-                  <Github className="h-4 w-4" /> Login with GitHub
+                <Link to={authLink} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                  {user ? <><LayoutDashboard className="h-4 w-4" /> Go to Dashboard</> : <><Github className="h-4 w-4" /> Login with GitHub</>}
                 </Link>
                 <Link to="/pricing" className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-secondary transition-colors">
                   View Pricing <ArrowRight className="h-4 w-4" />
@@ -136,8 +140,8 @@ export default function LandingPage() {
                 <p className="text-sm text-muted-foreground mb-2">Available for worldwide projects</p>
                 <h3 className="text-2xl font-bold text-foreground mb-1">Trusted by <span className="text-gradient">120+</span> teams</h3>
                 <p className="text-muted-foreground text-sm mb-4">Across 4 industries — shipping AI code reviews from idea to production in days.</p>
-                <Link to="/login" className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-secondary transition-colors">
-                  Start a Project
+                <Link to={authLink} className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2 text-sm font-medium text-foreground hover:bg-secondary transition-colors">
+                  {user ? "Go to Dashboard" : "Start a Project"}
                 </Link>
               </div>
             </RevealOnScroll>
@@ -158,8 +162,8 @@ export default function LandingPage() {
         <RevealOnScroll className="container text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">Ready to ship better code?</h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">Connect your GitHub and get your first AI code review in under 2 minutes.</p>
-          <Link to="/login" className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors animate-pulse-glow">
-            <Github className="h-4 w-4" /> Login with GitHub
+          <Link to={authLink} className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors animate-pulse-glow">
+            {user ? <><LayoutDashboard className="h-4 w-4" /> Go to Dashboard</> : <><Github className="h-4 w-4" /> Login with GitHub</>}
           </Link>
         </RevealOnScroll>
       </section>

@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Github, Moon, Sun } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 export default function SettingsPage() {
-  const [connected, setConnected] = useState(true);
+  const { user, loading: authLoading, logout } = useAuth();
   const [strictness, setStrictness] = useState<"strict" | "balanced" | "lenient">("balanced");
   const [dark, setDark] = useState(true);
+
+  if (authLoading) return <PageLayout showFooter={false}><div className="flex justify-center p-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></PageLayout>;
+  if (!user) return <Navigate to="/login" />;
 
   return (
     <PageLayout showFooter={false}>
@@ -19,13 +24,13 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Github className="h-5 w-5 text-foreground" />
-                <span className="text-sm text-muted-foreground">{connected ? "Connected as alex-morgan" : "Not connected"}</span>
+                <span className="text-sm text-muted-foreground">{user.githubConnected ? `Connected as ${user.name}` : "Not connected"}</span>
               </div>
               <button
-                onClick={() => setConnected(!connected)}
-                className={`rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${connected ? "border border-border text-foreground hover:bg-secondary" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                onClick={() => logout()}
+                className={`rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${user.githubConnected ? "border border-border text-foreground hover:bg-secondary" : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
               >
-                {connected ? "Disconnect" : "Connect"}
+                {user.githubConnected ? "Disconnect" : "Connect"}
               </button>
             </div>
           </div>

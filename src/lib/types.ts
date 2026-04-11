@@ -6,15 +6,24 @@ export interface Repository {
   language?: string;
   branch?: string;
   fullName?: string;
+  stars?: number;
+  htmlUrl?: string;
+  private?: boolean;
 }
 
 export interface Issue {
   file: string;
   line: number;
   type: "bug" | "performance" | "improvement";
+  severity?: "low" | "medium" | "high";
+  confidenceScore?: number;
   message: string;
   suggestion: string;
-  explanation: string;
+  explanation: string | {
+    whyExists: string;
+    realWorldImpact: string;
+    bestPracticeFix: string;
+  };
 }
 
 export interface ReviewResponse {

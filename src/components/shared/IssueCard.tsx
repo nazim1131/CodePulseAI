@@ -18,8 +18,22 @@ export const IssueCard = ({ issue, onExplain }: { issue: Issue; onExplain: (issu
           <Icon className={`h-4 w-4 ${cfg.color}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
+            {issue.severity && (
+              <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                issue.severity === 'high' ? 'bg-red-500/20 text-red-500' :
+                issue.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-500' :
+                'bg-blue-500/20 text-blue-500'
+              }`}>
+                {issue.severity}
+              </span>
+            )}
+            {issue.confidenceScore && (
+              <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded">
+                🤖 {issue.confidenceScore}% conf
+              </span>
+            )}
             <span className="text-xs text-muted-foreground font-mono">{issue.file}:{issue.line}</span>
           </div>
           <p className="text-sm text-foreground mb-2">{issue.message}</p>
