@@ -9,7 +9,7 @@ export const Footer = () => (
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <span className="text-sm font-bold text-primary-foreground">AI</span>
             </div>
-            <span className="text-lg font-bold text-foreground">CodeReview</span>
+            <span className="text-lg font-bold text-foreground">CodePulse</span>
           </div>
           <p className="text-sm text-muted-foreground">AI-powered code reviews that catch bugs before your users do.</p>
         </div>
@@ -35,8 +35,8 @@ export const Footer = () => (
           </div>
         </div>
       </div>
-      <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-        © 2026 CodeReview AI. All rights reserved.
+      <div className="border-t border-border mt-12 py-6 text-center text-sm text-muted-foreground">
+        © 2026 CodePulse AI. All rights reserved.
       </div>
     </div>
   </footer>

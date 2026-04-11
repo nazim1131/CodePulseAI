@@ -42,7 +42,7 @@ export default function LandingPage() {
             <RevealOnScroll delay={100}>
               <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-7xl leading-[1.1] mb-6">
                 Your AI<br />
-                <span className="text-gradient">Code Review</span><br />
+                <span className="text-gradient">CodePulse</span><br />
                 Team On Demand
               </h1>
             </RevealOnScroll>

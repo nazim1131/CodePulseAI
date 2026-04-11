@@ -19,7 +19,7 @@ export default function LoginPage() {
               <span className="text-xl font-bold text-primary-foreground">AI</span>
             </div>
             <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-            <p className="text-sm text-muted-foreground mt-1">Sign in to continue to CodeReview AI</p>
+            <p className="text-sm text-muted-foreground mt-1">Sign in to continue to CodePulse AI</p>
           </div>
 
           <button 

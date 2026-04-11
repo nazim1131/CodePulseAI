@@ -36,7 +36,7 @@ export default function SettingsPage() {
           </div>
 
           {/* AI Preferences */}
-          <div className="rounded-xl border border-border bg-card p-5">
+          {/* <div className="rounded-xl border border-border bg-card p-5">
             <h3 className="text-sm font-semibold text-foreground mb-3">AI Review Strictness</h3>
             <div className="flex gap-2">
               {(["strict", "balanced", "lenient"] as const).map(s => (
@@ -49,10 +49,10 @@ export default function SettingsPage() {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Theme */}
-          <div className="rounded-xl border border-border bg-card p-5">
+          {/* <div className="rounded-xl border border-border bg-card p-5">
             <h3 className="text-sm font-semibold text-foreground mb-3">Theme</h3>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">{dark ? "Dark mode" : "Light mode"}</span>
@@ -61,7 +61,7 @@ export default function SettingsPage() {
                 {dark ? "Dark" : "Light"}
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </PageLayout>
