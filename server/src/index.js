@@ -69,10 +69,19 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve frontend static files
+// const frontendPath = path.join(__dirname, '../../dist');
+// app.use(express.static(frontendPath));
+
+// app.get((req, res) => {
+//   res.sendFile(path.join(frontendPath, 'index.html'));
+// });
 const frontendPath = path.join(__dirname, '../../dist');
+
 app.use(express.static(frontendPath));
 
-app.get((req, res) => {
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
