@@ -1,13 +1,10 @@
-// AI service: Groq (primary) → Gemini (fallback)
+// AI service — Groq only (llama3-70b-8192)
 const Groq = require("groq-sdk");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// ─── Shared strict prompt ────────────────────────────────────────────────────
-const buildSystemPrompt = () =>
-  `You are a STRICT senior software engineer doing a deep, uncompromising code review.
+// ─── System prompt ────────────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are a STRICT senior software engineer doing a deep, uncompromising code review.
 
 Analyze the provided repository code and identify ALL of the following:
 1. Bugs (logic errors, null references, broken async/error handling)
@@ -55,22 +52,32 @@ The JSON must follow this EXACT schema:
 
 Return ONLY the raw JSON object, nothing else.`;
 
-// ─── JSON extraction ─────────────────────────────────────────────────────────
+// ─── JSON extraction ──────────────────────────────────────────────────────────
 const extractJSON = (text) => {
   console.log("[AI RAW RESPONSE]:", text.substring(0, 600), "...");
 
+  // Strip markdown code fences if present
   let cleaned = text.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
 
+  // Extract outermost JSON object
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start !== -1 && end !== -1 && end > start) {
     cleaned = cleaned.substring(start, end + 1);
   }
 
-  return JSON.parse(cleaned);
+  let result;
+  try {
+    result = JSON.parse(cleaned);
+  } catch (e) {
+    console.error("[AI] Invalid JSON from Groq:", cleaned.substring(0, 300));
+    throw new Error("AI response parsing failed");
+  }
+
+  return result;
 };
 
-// ─── Normalize result ────────────────────────────────────────────────────────
+// ─── Normalize result ─────────────────────────────────────────────────────────
 const normalizeResult = (parsed) => {
   const issues = Array.isArray(parsed.issues) ? parsed.issues : [];
 
@@ -92,7 +99,7 @@ const normalizeResult = (parsed) => {
   };
 };
 
-// ─── Mock data (no API keys) ─────────────────────────────────────────────────
+// ─── Mock data (no API key in dev) ───────────────────────────────────────────
 const getMockResult = () => ({
   score: 72,
   totalBugs: 3,
@@ -138,101 +145,25 @@ const getMockResult = () => ({
         realWorldImpact: "Causes unnecessary re-renders and reconciliation bugs.",
         bestPracticeFix: "Always use a unique stable ID (not array index) as the key prop."
       }
+    },
+    {
+      file: "src/styles/main.css", line: 1, type: "improvement", severity: "medium", confidenceScore: 78,
+      message: "No responsive breakpoints defined",
+      suggestion: "Add @media queries for mobile (max-width: 768px) and tablet (max-width: 1024px)",
+      explanation: {
+        whyExists: "CSS written only for desktop viewport.",
+        realWorldImpact: "Broken layout on mobile devices affecting ~60% of users.",
+        bestPracticeFix: "Use mobile-first CSS with min-width breakpoints."
+      }
     }
   ]
 });
 
-// ─── Groq analysis ───────────────────────────────────────────────────────────
-const analyzeWithGroq = async (code) => {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY not set");
-  }
-
-  console.log("[AI] Trying Groq: llama3-70b-8192");
-
-  const response = await groq.chat.completions.create({
-    model: "llama3-70b-8192",
-    messages: [
-      { role: "system", content: buildSystemPrompt() },
-      { role: "user", content: `Analyze this code:\n\n${code}` }
-    ],
-    temperature: 0.3,
-    max_tokens: 4096,
-  });
-
-  const text = response.choices[0].message.content;
-  const parsed = extractJSON(text);
-
-  if (!parsed || !Array.isArray(parsed.issues) || parsed.issues.length === 0) {
-    throw new Error("Groq returned empty issues — invalid analysis");
-  }
-
-  const result = normalizeResult(parsed);
-  console.log(`[AI] Groq success: score=${result.score}, issues=${result.issues.length}`);
-  return result;
-};
-
-// ─── Gemini analysis (fallback) ──────────────────────────────────────────────
-const analyzeWithGemini = async (code) => {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY not set");
-  }
-
-  const fullPrompt = `${buildSystemPrompt()}\n\nCode to analyze:\n${code}`;
-  const modelsToTry = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
-
-  for (const modelName of modelsToTry) {
-    try {
-      console.log(`[AI] Gemini fallback trying: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
-
-      const result = await model.generateContent(fullPrompt);
-      const response = await result.response;
-      const text = response.text();
-
-      let parsed;
-      try {
-        parsed = extractJSON(text);
-      } catch (parseErr) {
-        console.error(`[AI] Gemini JSON parse failed for ${modelName}:`, parseErr.message);
-        continue;
-      }
-
-      if (!parsed || !Array.isArray(parsed.issues) || parsed.issues.length === 0) {
-        console.warn(`[AI] Gemini ${modelName} returned empty issues — trying next`);
-        continue;
-      }
-
-      // Handle alternative format { bugs: [], improvements: [], performance: [] }
-      if (!parsed.issues && (parsed.bugs || parsed.improvements || parsed.performance)) {
-        parsed.issues = [
-          ...(parsed.bugs || []).map((b) => ({ ...b, type: "bug", message: b.issue || b.message, suggestion: b.fix || b.suggestion || "" })),
-          ...(parsed.improvements || []).map((i) => ({ ...i, type: "improvement", message: i.suggestion || i.message, line: i.line || 1 })),
-          ...(parsed.performance || []).map((p) => ({ ...p, type: "performance", message: p.issue || p.message, line: p.line || 1 }))
-        ];
-      }
-
-      const normalized = normalizeResult(parsed);
-      console.log(`[AI] Gemini success with ${modelName}: score=${normalized.score}, issues=${normalized.issues.length}`);
-      return normalized;
-
-    } catch (err) {
-      if (err.message.includes("429")) {
-        console.warn(`[AI] Gemini ${modelName}: quota exceeded.`);
-      } else {
-        console.error(`[AI] Gemini ${modelName} failed:`, err.message);
-      }
-    }
-  }
-
-  throw new Error("All Gemini models failed");
-};
-
-// ─── Main entry point ────────────────────────────────────────────────────────
+// ─── Main entry point ─────────────────────────────────────────────────────────
 const analyzeCode = async (filesContentString) => {
-  // No API keys at all → mock data for local dev
-  if (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY) {
-    console.log("[AI] No API keys found, returning mock data");
+  // No API key → return mock data for local dev
+  if (!process.env.GROQ_API_KEY) {
+    console.log("[AI] GROQ_API_KEY not set, returning mock data");
     return new Promise((resolve) => setTimeout(() => resolve(getMockResult()), 1500));
   }
 
@@ -240,22 +171,36 @@ const analyzeCode = async (filesContentString) => {
     throw new Error("No code content was provided for analysis");
   }
 
-  // Cap code at 30k chars to stay within context limits
+  // Cap at 30k chars to stay within Groq context limits
   const code = filesContentString.substring(0, 30000);
 
-  // 1. Try Groq first
-  try {
-    return await analyzeWithGroq(code);
-  } catch (groqErr) {
-    console.warn("[AI] Groq failed, falling back to Gemini:", groqErr.message);
-  }
+  console.log("[AI] Sending code to Groq llama3-70b-8192 ...");
 
-  // 2. Fall back to Gemini
   try {
-    return await analyzeWithGemini(code);
-  } catch (geminiErr) {
-    console.error("[AI] Both Groq and Gemini failed:", geminiErr.message);
-    throw new Error(`AI analysis failed: ${geminiErr.message}`);
+    const response = await groq.chat.completions.create({
+      model: "llama3-70b-8192",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Analyze this code:\n\n${code}` }
+      ],
+      temperature: 0.3,
+      max_tokens: 4096,
+    });
+
+    const text = response.choices[0].message.content;
+    const parsed = extractJSON(text);
+
+    if (!parsed || !Array.isArray(parsed.issues) || parsed.issues.length === 0) {
+      throw new Error("Groq returned empty issues — invalid analysis");
+    }
+
+    const result = normalizeResult(parsed);
+    console.log(`[AI] Groq success: score=${result.score}, issues=${result.issues.length}`);
+    return result;
+
+  } catch (err) {
+    console.error("[AI] Groq error:", err.message);
+    throw new Error(`AI analysis failed: ${err.message}`);
   }
 };
 
