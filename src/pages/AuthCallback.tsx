@@ -1,33 +1,46 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AuthCallback() {
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get("token");
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
-      if (token) {
-        localStorage.setItem("token", token);
-        
-        // Also store inside 'user' key to prevent breaking existing API configs 
-        try {
-          const existingInfo = localStorage.getItem("user");
-          const parsed = existingInfo ? JSON.parse(existingInfo) : {};
-          localStorage.setItem("user", JSON.stringify({ ...parsed, token }));
-        } catch (e) {
-          localStorage.setItem("user", JSON.stringify({ token }));
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        const username = params.get("username");
+
+        if (!token) {
+          console.warn("[AuthCallback] No token in URL — redirecting to login");
+          navigate("/login", { replace: true });
+          return;
         }
-        
-        window.location.href = "/dashboard";
-      } else {
-        window.location.href = "/";
+
+        // Persist token in both keys (mock-api.ts reads from both)
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify({ token, username: username || "" }));
+
+        // Clean token from URL bar without triggering a reload
+        window.history.replaceState({}, document.title, "/auth/callback");
+
+        // Verify token with backend and populate AuthContext
+        await refreshUser();
+
+        // Navigate using React Router — no page reload, no race condition
+        navigate("/dashboard", { replace: true });
+      } catch (error) {
+        console.error("[AuthCallback] Error:", error);
+        navigate("/login", { replace: true });
       }
-    } catch (error) {
-      console.error("Auth error:", error);
-      window.location.href = "/";
-    }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

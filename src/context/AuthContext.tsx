@@ -17,7 +17,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
-    const token = localStorage.getItem("token") || localStorage.getItem("user");
+    // Properly extract token — "token" key first, then parse "user" JSON object
+    let token = localStorage.getItem("token");
+    if (!token) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        try { token = JSON.parse(userStr).token; } catch {}
+      }
+    }
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -28,13 +35,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (userData) {
         setUser(userData);
       } else {
+        // null = 401 = token is explicitly invalid — safe to clear
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setUser(null);
       }
-    } catch (e) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+    } catch {
+      // Network/server error — do NOT clear the token, just fail gracefully
+      // User will appear logged out in UI until next successful refresh
+      console.warn("[Auth] Could not verify session — keeping token for retry");
       setUser(null);
     }
     setLoading(false);

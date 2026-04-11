@@ -18,23 +18,20 @@ const getHeaders = () => {
 
 export const api = {
   getMe: async (): Promise<User | null> => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: getHeaders() });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return {
-        id: data.id,
-        name: data.username,
-        email: data.email || "",
-        avatar: data.avatar || "",
-        plan: data.plan || "free",
-        scansRemaining: data.scansRemaining || 0,
-        scansTotal: data.scansTotal || 0,
-        githubConnected: !!data.githubId
-      };
-    } catch {
-      return null;
-    }
+    const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: getHeaders() });
+    if (res.status === 401) return null; // Explicitly invalid token → caller should clear it
+    if (!res.ok) throw new Error(`Server error: ${res.status}`); // Temp failure → caller should NOT clear token
+    const data = await res.json();
+    return {
+      id: data.id,
+      name: data.username,
+      email: data.email || "",
+      avatar: data.avatar || "",
+      plan: data.plan || "free",
+      scansRemaining: data.scansRemaining || 0,
+      scansTotal: data.scansTotal || 0,
+      githubConnected: !!data.githubId
+    };
   },
   authGithub: async (code?: string): Promise<{ success: boolean, user: any }> => {
     try {

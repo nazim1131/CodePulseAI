@@ -35,7 +35,19 @@ app.use('/api/', globalLimiter);
 app.use('/api/billing/webhook', express.raw({ type: 'application/json' }), billingRoutes.webhookRouter);
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: (origin, callback) => {
+    // Allow same-origin requests (no origin header) and configured origins
+    const allowed = [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173',
+      'http://localhost:5000',
+    ].filter(Boolean);
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
