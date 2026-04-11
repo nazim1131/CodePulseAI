@@ -178,7 +178,7 @@ const analyzeCode = async (filesContentString) => {
 
   try {
     const response = await groq.chat.completions.create({
-      model: "llama3-70b-8192",
+      model: "llama-3.1-70b-versatile",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Analyze this code:\n\n${code}` }
