@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const session = require('express-session');
 const passport = require('./config/passport');
+const path = require('path');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
@@ -33,9 +34,8 @@ app.use('/api/', globalLimiter);
 // Stripe Webhooks (must be before express.json parsing)
 app.use('/api/billing/webhook', express.raw({ type: 'application/json' }), billingRoutes.webhookRouter);
 
-// Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL,
   credentials: true,
 }));
 app.use(express.json());
@@ -66,6 +66,14 @@ app.use('/api/stats', statsRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is running' });
+});
+
+// Serve frontend static files
+const frontendPath = path.join(__dirname, '../../dist');
+app.use(express.static(frontendPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Start Server

@@ -30,7 +30,7 @@ router.get('/github/callback',
   passport.authenticate('github', { failureRedirect: '/login?error=auth_failed' }),
   (req, res) => {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
       const user = req.user;
       
       if (!user) {
@@ -43,7 +43,7 @@ router.get('/github/callback',
       res.redirect(`${frontendUrl}/auth/callback?token=${token}&username=${user.username}`);
     } catch (error) {
       console.error('Github callback processing error:', error);
-      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=auth_failed`);
+      res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   }
 );

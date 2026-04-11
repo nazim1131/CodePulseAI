@@ -36,12 +36,14 @@ router.post('/checkout', protect, async (req, res) => {
         ? process.env.STRIPE_TEAM_PRICE_ID || process.env.STRIPE_PRO_PRICE_ID
         : process.env.STRIPE_PRO_PRICE_ID;
 
-    const session = await stripe.checkout.sessions.create({
+      const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+
+      const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?payment=success`,
-      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing?payment=cancelled`,
+      success_url: `${frontendUrl}/dashboard?payment=success`,
+      cancel_url: `${frontendUrl}/pricing?payment=cancelled`,
       client_reference_id: req.user._id.toString(),
       customer_email: req.user.email || undefined,
       metadata: {

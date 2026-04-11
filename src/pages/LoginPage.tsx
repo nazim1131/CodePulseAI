@@ -23,7 +23,7 @@ export default function LoginPage() {
           </div>
 
           <button 
-            onClick={() => { window.location.href = "http://localhost:5000/api/auth/github"; }}
+            onClick={() => { window.location.href = "/api/auth/github"; }}
             className="w-full flex items-center justify-center gap-3 rounded-xl bg-foreground text-background px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity mb-4"
           >
             <Github className="h-5 w-5" />
