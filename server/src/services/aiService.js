@@ -232,7 +232,6 @@ const analyzeCode = async (filesContentString) => {
       ],
       temperature: 0.3,
       max_tokens: 3000,
-      response_format: { type: "json_object" },
     });
 
     const text = response.choices[0].message.content;
