@@ -172,19 +172,19 @@ const analyzeCode = async (filesContentString) => {
   }
 
   // Cap at 30k chars to stay within Groq context limits
-  const code = filesContentString.substring(0, 30000);
+  const code = filesContentString.substring(0, 12000);
 
   console.log("[AI] Sending code to Groq llama3-70b-8192 ...");
 
   try {
     const response = await groq.chat.completions.create({
-      model: "groq/compound",
+      model: "openai/gpt-oss-20b",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Analyze this code:\n\n${code}` }
       ],
       temperature: 0.3,
-      max_tokens: 4096,
+      max_tokens: 3000,
     });
 
     const text = response.choices[0].message.content;
