@@ -178,7 +178,7 @@ const analyzeCode = async (filesContentString) => {
 
   try {
     const response = await groq.chat.completions.create({
-      model: "openai/gpt-oss-120b",
+      model: "groq/compound",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: `Analyze this code:\n\n${code}` }
