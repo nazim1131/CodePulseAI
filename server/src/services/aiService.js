@@ -172,7 +172,7 @@ const analyzeCode = async (filesContentString) => {
   }
 
   // Cap at 30k chars to stay within Groq context limits
-  const code = filesContentString.substring(0, 12000);
+  const code = filesContentString.substring(0, 10000);
 
   console.log("[AI] Sending code to Groq llama3-70b-8192 ...");
 
