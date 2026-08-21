@@ -53,28 +53,75 @@ The JSON must follow this EXACT schema:
 Return ONLY the raw JSON object, nothing else.`;
 
 // ─── JSON extraction ──────────────────────────────────────────────────────────
+// const extractJSON = (text) => {
+//   console.log("[AI RAW RESPONSE]:", text.substring(0, 600), "...");
+
+//   // Strip markdown code fences if present
+//   let cleaned = text.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+
+//   // Extract outermost JSON object
+//   const start = cleaned.indexOf("{");
+//   const end = cleaned.lastIndexOf("}");
+//   if (start !== -1 && end !== -1 && end > start) {
+//     cleaned = cleaned.substring(start, end + 1);
+//   }
+
+//   let result;
+//   try {
+//     result = JSON.parse(cleaned);
+//   } catch (e) {
+//     console.error("[AI] Invalid JSON from Groq:", cleaned.substring(0, 300));
+//     throw new Error("AI response parsing failed");
+//   }
+
+//   return result;
+// };
 const extractJSON = (text) => {
-  console.log("[AI RAW RESPONSE]:", text.substring(0, 600), "...");
+  console.log("[AI RAW RESPONSE]:", text.substring(0, 1000), "...");
 
-  // Strip markdown code fences if present
-  let cleaned = text.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+  if (!text || typeof text !== "string") {
+    throw new Error("AI returned empty response");
+  }
 
-  // Extract outermost JSON object
+  // Remove markdown code fences
+  let cleaned = text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  // Find the outermost JSON object
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
-  if (start !== -1 && end !== -1 && end > start) {
-    cleaned = cleaned.substring(start, end + 1);
+
+  if (start === -1 || end === -1 || end <= start) {
+    console.error("[AI] No JSON object found in Groq response");
+    throw new Error("AI response did not contain valid JSON");
   }
 
-  let result;
+  cleaned = cleaned.substring(start, end + 1).trim();
+
+  // First attempt: normal JSON parsing
   try {
-    result = JSON.parse(cleaned);
-  } catch (e) {
-    console.error("[AI] Invalid JSON from Groq:", cleaned.substring(0, 300));
-    throw new Error("AI response parsing failed");
-  }
+    return JSON.parse(cleaned);
+  } catch (firstError) {
+    console.warn("[AI] First JSON parse failed:", firstError.message);
 
-  return result;
+    // Repair common formatting issues
+    try {
+      const repaired = cleaned
+        // Remove control characters that break JSON
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+        // Remove trailing commas before } or ]
+        .replace(/,\s*([}\]])/g, "$1");
+
+      return JSON.parse(repaired);
+    } catch (secondError) {
+      console.error("[AI] JSON repair failed:", secondError.message);
+      console.error("[AI] JSON preview:", cleaned.substring(0, 1500));
+
+      throw new Error("AI response parsing failed");
+    }
+  }
 };
 
 // ─── Normalize result ─────────────────────────────────────────────────────────
@@ -174,7 +221,7 @@ const analyzeCode = async (filesContentString) => {
   // Cap at 30k chars to stay within Groq context limits
   const code = filesContentString.substring(0, 10000);
 
-  console.log("[AI] Sending code to Groq llama3-70b-8192 ...");
+  console.log("[AI] Sending code to Groq openai/gpt-oss-20b");
 
   try {
     const response = await groq.chat.completions.create({
@@ -185,6 +232,7 @@ const analyzeCode = async (filesContentString) => {
       ],
       temperature: 0.3,
       max_tokens: 3000,
+      response_format: { type: "json_object" },
     });
 
     const text = response.choices[0].message.content;
